@@ -14,10 +14,14 @@
 
 package io.confluent.kafkarest.entities;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JsonProduceRecord extends ProduceRecordBase<Object, Object> {
+  
+  private Map<String, String> headers;
 
   @JsonCreator
   public JsonProduceRecord(
@@ -27,8 +31,22 @@ public class JsonProduceRecord extends ProduceRecordBase<Object, Object> {
     super(key, value);
   }
 
+  @JsonCreator
+  public JsonProduceRecord(
+      @JsonProperty("headers") Map<String, String> headers,
+      @JsonProperty("key") Object key,
+      @JsonProperty("value") Object value
+  ) {
+    super(key, value);
+    this.headers = headers;
+  }
+
   public JsonProduceRecord(Object value) {
     this(null, value);
+  }
+
+  public JsonProduceRecord(Object value, Map<String, String> headers) {
+    this(headers, null, value);
   }
 
   @Override
@@ -44,14 +62,21 @@ public class JsonProduceRecord extends ProduceRecordBase<Object, Object> {
 
     return key != null
            ? key.equals(that.key)
-           : that.key == null && !(value != null ? !value.equals(that.value) : that.value != null);
+           : that.key == null && !(value != null ? !value.equals(that.value) : that.value != null) 
+           && that.headers == null && !(headers != null ? !headers.equals(that.headers)
+               : that.headers != null);
 
   }
 
   @Override
   public int hashCode() {
     int result = key != null ? key.hashCode() : 0;
-    result = 31 * result + (value != null ? value.hashCode() : 0);
+    result = 31 * result + (value != null ? value.hashCode() : 0) + headers.hashCode();
     return result;
   }
+
+  public Map<String, String> getHeaders() {
+    return headers;
+  }
+
 }

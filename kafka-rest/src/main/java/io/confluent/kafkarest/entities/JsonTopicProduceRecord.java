@@ -14,10 +14,12 @@
 
 package io.confluent.kafkarest.entities;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 
 import javax.validation.constraints.Min;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JsonTopicProduceRecord extends JsonProduceRecord
     implements TopicProduceRecord<Object, Object> {
@@ -36,8 +38,23 @@ public class JsonTopicProduceRecord extends JsonProduceRecord
     this.partition = partition;
   }
 
+  @JsonCreator
+  public JsonTopicProduceRecord(
+      @JsonProperty("headers") Map<String, String> headers,
+      @JsonProperty("key") Object key,
+      @JsonProperty("value") Object value,
+      @JsonProperty("partition") Integer partition
+  ) {
+    super(headers, key, value);
+    this.partition = partition;
+  }
+
   public JsonTopicProduceRecord(Object value, Integer partition) {
     this(null, value, partition);
+  }
+
+  public JsonTopicProduceRecord(Object value, Map<String, String> headers, Integer partition) {
+    this(headers, value, null, partition);
   }
 
   @Override

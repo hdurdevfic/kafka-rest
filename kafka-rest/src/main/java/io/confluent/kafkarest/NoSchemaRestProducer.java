@@ -14,11 +14,16 @@
 
 package io.confluent.kafkarest;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.header.internals.RecordHeader;
+import org.apache.kafka.common.header.internals.RecordHeaders;
+
+import io.confluent.kafkarest.entities.JsonProduceRecord;
+import io.confluent.kafkarest.entities.JsonTopicProduceRecord;
 import io.confluent.kafkarest.entities.ProduceRecord;
 
 /**
@@ -44,10 +49,28 @@ public class NoSchemaRestProducer<K, V> implements RestProducer<K, V> {
       if (recordPartition == null) {
         recordPartition = record.partition();
       }
-      producer.send(
-          new ProducerRecord(topic, recordPartition, record.getKey(), record.getValue()),
-          task.createCallback()
-      );
+      if (record instanceof JsonProduceRecord || record instanceof JsonTopicProduceRecord) {
+        JsonProduceRecord headersRecord = (JsonProduceRecord)record;
+        RecordHeaders recordHeaders = new RecordHeaders();
+        if (headersRecord.getHeaders() != null) {
+          for (String headerKey: headersRecord.getHeaders().keySet()) {
+            String headerValue = headersRecord.getHeaders().get(headerKey);
+            RecordHeader recordHeader = new RecordHeader(headerKey, 
+                headerValue.getBytes(StandardCharsets.UTF_8));
+            recordHeaders.add(recordHeader);
+          }
+        }
+        producer.send(
+            new ProducerRecord(topic, recordPartition, headersRecord.getKey(), 
+                headersRecord.getValue(), recordHeaders),
+            task.createCallback()
+        );
+      } else {
+        producer.send(
+            new ProducerRecord(topic, recordPartition, record.getKey(), record.getValue()),
+            task.createCallback()
+        );
+      }
     }
   }
 
